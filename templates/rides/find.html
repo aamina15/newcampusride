@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Find College Ride{% endblock %}
+
+{% block content %}
+<div class="grid" style="gap: 2rem;">
+    <div class="glass-card">
+        <h3 style="margin-bottom: 1.5rem; color: var(--accent-secondary);">✨ AI Ride Matching</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Describe your commute in plain English and let AI find the best matches.</p>
+        <form method="POST" action="{{ url_for('ride.ai_match') }}" style="display: flex; gap: 1rem;">
+            <input type="text" name="description" class="form-control" placeholder="E.g. I want to go to Gomti Nagar from college around 9 AM" style="flex: 1; height: 50px; font-size: 1.05rem;" required>
+            <button type="submit" class="btn btn-primary" style="height: 50px; width: 140px; white-space: nowrap;">Ask AI ✨</button>
+        </form>
+        {% if ai_matched %}
+            <div style="margin-top: 1rem; color: var(--success); font-weight: 500;">✅ AI matched these commutes for you!</div>
+        {% endif %}
+    </div>
+
+    <!-- Search Filter -->
+    <div class="glass-card">
+        <h3 style="margin-bottom: 1.5rem;">Manual Search</h3>
+        
+        <form method="POST" action="{{ url_for('ride.find') }}" class="grid grid-cols-3" style="align-items: end; gap: 1rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Commute Direction</label>
+                <select name="ride_type" class="form-control" style="background-color: var(--bg-card);">
+                    <option value="">Any Direction</option>
+                    <option value="to_college">🚗 To Ramswaroop College</option>
+                    <option value="from_college">🏠 From Ramswaroop College</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Locality (Optional)</label>
+                <input class="form-control" type="text" name="locality" placeholder="E.g. Gomti Nagar">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Time of Day</label>
+                <select name="time_filter" class="form-control" style="background-color: var(--bg-card);">
+                    <option value="">Any Time</option>
+                    <option value="morning">Morning (Before 12 PM)</option>
+                    <option value="evening">Evening (After 12 PM)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="height: 48px; grid-column: span 3;">Search Commutes</button>
+        </form>
+    </div>
+
+    <!-- Results -->
+    <div>
+        <h3 style="margin-bottom: 1.5rem;">Available Commutes</h3>
+        <div class="grid grid-cols-2">
+            {% for ride in rides %}
+            <div class="glass-card" style="padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            {% if ride.ride_type == 'to_college' %}
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid var(--success);">To College</span>
+                            {% else %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid var(--warning);">From College</span>
+                            {% endif %}
+                            
+                            {% if ride.is_recurring %}
+                                <span class="badge badge-primary">🔄 Daily ({{ ride.recurrence_days }})</span>
+                            {% else %}
+                                <span class="badge" style="border: 1px solid var(--glass-border);">One-time</span>
+                            {% endif %}
+                        </div>
+
+                        <h4 style="font-size: 1.1rem; color: var(--accent-primary);">{{ ride.source }} → {{ ride.destination }}</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                            📅 {{ ride.date_time.strftime('%b %d, %Y - %I:%M %p') }}
+                        </p>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
+                            👤 Driver: {{ ride.driver.name }} <span title="Verified Student" style="color: var(--accent-primary);">✓</span>
+                            {% if ride.is_female_only %}
+                                <span class="badge badge-secondary" style="margin-left: 0.5rem;">Female Only</span>
+                            {% endif %}
+                        </p>
+                        {% if ride.pickup_name %}
+                        <p style="color: var(--accent-secondary); font-size: 0.85rem; margin-top: 0.3rem;">
+                            📍 Pickup: {{ ride.pickup_name }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 1.2rem; font-weight: 700;">₹{{ ride.cost_per_seat|int }} per student</span>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="badge badge-primary">{{ ride.seats_available }} seats left</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                    <a href="{{ url_for('ride.details', ride_id=ride.id) }}" class="btn btn-secondary" style="flex: 1;">View Details</a>
+                    {% if ride.pickup_lat and ride.pickup_lng %}
+                    <a href="https://www.google.com/maps?q={{ride.pickup_lat}},{{ride.pickup_lng}}" target="_blank" class="btn btn-secondary" style="flex: 1; background: rgba(16, 185, 129, 0.1); border-color: var(--success); color: var(--success); text-align: center; text-decoration: none; padding: 0.75rem 0;">📍 Open in Maps</a>
+                    {% endif %}
+                    <form action="{{ url_for('ride.join', ride_id=ride.id) }}" method="POST" style="flex: 1;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Join</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="glass-card" style="text-align: center; grid-column: span 2; padding: 3rem;">
+                <p style="color: var(--text-secondary); font-size: 1.1rem;">No commutes match your search criteria right now.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

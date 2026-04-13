@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ circle.name }} | Ride Circles{% endblock %}
+
+{% block content %}
+<div class="grid" style="gap: 2rem;">
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+            <h2>{{ circle.name }}</h2>
+            <span class="badge badge-primary">{{ circle.members|length }} Members</span>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Created on {{ circle.created_at.strftime('%b %d, %Y') }}
+        </p>
+        
+        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: var(--border-radius-sm); border: 1px dashed var(--accent-secondary);">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">Invite Code</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-family: monospace; font-size: 1.2rem; font-weight: bold; letter-spacing: 2px;">{{ circle.invite_code }}</span>
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;" onclick="navigator.clipboard.writeText('{{ circle.invite_code }}'); alert('Copied!');">Copy</button>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Share this code with other students so they can join.</p>
+        </div>
+    </div>
+
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3>Upcoming Group Rides</h3>
+            <a href="{{ url_for('ride.offer') }}" class="btn btn-primary">Offer to Group</a>
+        </div>
+        
+        <div class="grid grid-cols-2">
+            {% for ride in rides %}
+            <div class="glass-card" style="padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <h4 style="font-size: 1.1rem; color: var(--accent-primary);">{{ ride.source }} → {{ ride.destination }}</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                            📅 {{ ride.date_time.strftime('%b %d, %Y - %I:%M %p') }}
+                        </p>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                            👤 Driver: {{ ride.driver.name }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                    <a href="{{ url_for('ride.details', ride_id=ride.id) }}" class="btn btn-secondary" style="flex: 1;">View Details</a>
+                    <form action="{{ url_for('ride.join', ride_id=ride.id) }}" method="POST" style="flex: 1;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Join</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="glass-card" style="text-align: center; grid-column: span 2; padding: 3rem;">
+                <p style="color: var(--text-secondary);">No upcoming rides within this circle.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

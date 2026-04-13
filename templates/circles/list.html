@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Ride Circles{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h2>Ride Circles 🤝</h2>
+    <p style="color: var(--text-secondary);">Organize private commutes with classmates, clubs, or friends.</p>
+</div>
+
+<div class="grid grid-cols-2" style="margin-bottom: 3rem; gap: 2rem;">
+    <div class="glass-card">
+        <h3 style="margin-bottom: 1rem;">Create a Circle</h3>
+        <form action="{{ url_for('circle.create') }}" method="POST">
+            <div class="form-group">
+                <label class="form-label">Circle Name</label>
+                <input type="text" class="form-control" name="name" placeholder="e.g. CS Dept Weekly Commute" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Create Group</button>
+        </form>
+    </div>
+    
+    <div class="glass-card">
+        <h3 style="margin-bottom: 1rem;">Join a Circle</h3>
+        <form action="{{ url_for('circle.join') }}" method="POST">
+            <div class="form-group">
+                <label class="form-label">Invite Code</label>
+                <input type="text" class="form-control" name="invite_code" placeholder="Enter 8-digit code" required style="font-family: monospace;">
+            </div>
+            <button type="submit" class="btn btn-secondary" style="width: 100%;">Join Group</button>
+        </form>
+    </div>
+</div>
+
+<h3>My Circles</h3>
+<div class="grid grid-cols-3" style="margin-top: 1.5rem;">
+    {% for circle in circles %}
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+            <h4 style="font-size: 1.2rem;">{{ circle.name }}</h4>
+            <span class="badge badge-primary">{{ circle.members|length }} Members</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+            Invite Code: <span style="font-family: monospace; font-weight: bold; color: var(--text-primary); user-select: all;">{{ circle.invite_code }}</span>
+        </p>
+        <a href="{{ url_for('circle.details', circle_id=circle.id) }}" class="btn btn-secondary" style="width: 100%;">View Circle</a>
+    </div>
+    {% else %}
+    <p style="color: var(--text-secondary); grid-column: span 3;">You haven't joined any circles yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}

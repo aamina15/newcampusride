@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Home{% endblock %} | CampusRide</title>
+    <!-- Use Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <a href="{{ url_for('index') }}" class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 16H9m10 0h3v-3.15a1 1 0 00-.84-.99L16 11l-2.7-3.6a2 2 0 00-1.6-.8H8.3a2 2 0 00-1.6.8L4 11l-5.16.86a1 1 0 00-.84.99V16h3m10 0a2 2 0 104 0m-4 0a2 2 0 11-4 0m-7 0a2 2 0 104 0m-4 0a2 2 0 11-4 0"></path>
+            </svg>
+            CampusRide
+        </a>
+        <div class="nav-links">
+            {% if current_user.is_authenticated %}
+                {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.blueprint == 'admin' %}admin-active{% endif %}">Admin Panel</a>
+                {% endif %}
+                <a href="{{ url_for('ride.dashboard') }}" class="nav-item {% if request.endpoint == 'ride.dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="{{ url_for('ride.find') }}" class="nav-item {% if request.endpoint == 'ride.find' %}active{% endif %}">Find College Ride</a>
+                <a href="{{ url_for('ride.offer') }}" class="nav-item {% if request.endpoint == 'ride.offer' %}active{% endif %}">Offer College Ride</a>
+                <a href="{{ url_for('circle.list') }}" class="nav-item {% if request.blueprint == 'circle' %}active{% endif %}">Circles</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary" style="padding: 0.4rem 1rem;">Logout</a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="nav-item {% if request.blueprint == 'auth' %}active{% endif %}">Login</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary" style="padding: 0.4rem 1rem;">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <h1 class="hero-title">Your Campus, <br>Your Commute.</h1>
+    <p class="hero-subtitle">CampusRide helps you find trusted ride partners from your college, coordinate pickups, and split petrol costs fairly. Exclusively for verified college students.</p>
+    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">Get Started Now</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-secondary" style="font-size: 1.1rem; padding: 1rem 2rem;">Login to Account</a>
+    </div>
+</div>
+
+<div class="grid grid-cols-3" style="margin-top: 3rem;">
+    <div class="glass-card">
+        <h3>Verified Community 🎓</h3>
+        <p style="color: var(--text-secondary); margin-top: 1rem;">Exclusive to students on your campus. Every user is verified via their official college email to ensure maximum safety.</p>
+    </div>
+    <div class="glass-card">
+        <h3>Smart Cost Split ⛽</h3>
+        <p style="color: var(--text-secondary); margin-top: 1rem;">Our built-in calculator automatically figures out the exact petrol costs so everyone pays their fair share effortlessly.</p>
+    </div>
+    <div class="glass-card">
+        <h3>Ride Circles 🤝</h3>
+        <p style="color: var(--text-secondary); margin-top: 1rem;">Create private groups with classmates or friends to easily coordinate daily commutes and share routines securely.</p>
+    </div>
+</div>
+{% endblock %}

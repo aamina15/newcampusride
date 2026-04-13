@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom: 2rem;">
+    <h2>Welcome back, {{ current_user.name.split()[0] }}! 👋</h2>
+    <p style="color: var(--text-secondary);">What's your commute plan today?</p>
+</div>
+
+<!-- Main Action Hub -->
+<div class="grid grid-cols-2" style="gap: 1.5rem; margin-bottom: 2rem;">
+    <a href="{{ url_for('ride.find') }}" class="glass-card" style="text-decoration: none; display: flex; align-items: center; gap: 1.5rem; padding: 2rem; border: 1px solid var(--accent-primary); background: rgba(99, 102, 241, 0.05);">
+        <div style="font-size: 3rem;">🔍</div>
+        <div>
+            <h3 style="color: var(--text-primary); margin-bottom: 0.2rem;">Find College Ride</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">Search or use AI to find a student carpool to campus.</p>
+        </div>
+    </a>
+    <a href="{{ url_for('ride.offer') }}" class="glass-card" style="text-decoration: none; display: flex; align-items: center; gap: 1.5rem; padding: 2rem; border: 1px solid var(--success); background: rgba(16, 185, 129, 0.05);">
+        <div style="font-size: 3rem;">🚙</div>
+        <div>
+            <h3 style="color: var(--text-primary); margin-bottom: 0.2rem;">Offer College Ride</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">Publish your route, share fuel costs, and earn savings.</p>
+        </div>
+    </a>
+</div>
+
+<!-- Advanced FinTech Savings Hub -->
+<div class="glass-card" style="margin-bottom: 2rem; border-top: 4px solid var(--success);">
+    <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">📊 Savings Dashboard <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-secondary);">(FinTech Overview)</span></h3>
+    
+    <div class="grid grid-cols-2" style="gap: 2rem;">
+        <div style="padding-right: 2rem; border-right: 1px solid rgba(255,255,255,0.1);">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">Total Lifetime Savings</p>
+            <h1 style="color: var(--success); font-size: 2.5rem; margin-bottom: 0.5rem;">₹{{ "%.0f"|format(fintech_stats.lifetime_savings) }}</h1>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">Across <strong>{{ fintech_stats.lifetime_rides }}</strong> completed commutes</p>
+        </div>
+        <div>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">This Month's Impact</p>
+            <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">₹{{ "%.0f"|format(fintech_stats.monthly_savings) }} <span style="font-size: 0.9rem; color: var(--success); font-weight: 400;">Saved</span></h2>
+            <div style="height: 6px; background: rgba(16, 185, 129, 0.1); border-radius: 3px; margin: 1rem 0;">
+                <div style="width: 75%; height: 100%; background: var(--success); border-radius: 3px;"></div>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Average cost per ride: ₹{{ "%.0f"|format(fintech_stats.avg_cost) }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-2" style="gap: 1rem; margin-bottom: 2rem;">
+    <!-- Locality Insights Box -->
+    <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); padding: 1rem; border-radius: var(--border-radius-sm); display: flex; align-items: center; gap: 1rem;">
+        <div style="font-size: 1.2rem;">📍</div>
+        <div>
+            <p style="font-weight: 600; font-size: 0.9rem; color: #818cf8;">Locality Insights</p>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">{{ locality_insight }}</p>
+        </div>
+    </div>
+
+    <!-- Fuel Setup Insights -->
+    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: var(--border-radius-sm); display: flex; align-items: center; gap: 1rem;">
+        <div style="font-size: 1.2rem;">⛽</div>
+        <div style="flex: 1;">
+            <p style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">Fuel Price: ₹{{ "%.2f"|format(fuel_settings.current_price) }}/L</p>
+            <p style="font-size: 0.75rem; color: var(--text-secondary);">Updated: {{ fuel_settings.last_updated.strftime('%b %d') }}</p>
+        </div>
+        {% set now_obj = namespace(d=now) %}
+        {% set days_diff = (now_obj.d - fuel_settings.last_updated).days if now_obj.d else 0 %}
+        {% if days_diff > 15 %}
+            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--warning); font-size: 0.6rem;">Outdated</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-2">
+    <div>
+        <h3 style="margin-bottom: 1rem; color: var(--accent-primary);">My Commutes (Offered)</h3>
+        {% if offered_rides %}
+            <div class="grid" style="gap: 1rem;">
+                {% for ride in offered_rides %}
+                <div class="glass-card" style="padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                {% if ride.ride_type == 'to_college' %}
+                                    <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid var(--success);">To College</span>
+                                {% else %}
+                                    <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid var(--warning);">From College</span>
+                                {% endif %}
+                                {% if ride.is_recurring %}
+                                    <span class="badge badge-primary">🔄 Daily</span>
+                                {% endif %}
+                            </div>
+                            <h4 style="font-size: 1.1rem;">{{ ride.source }} → {{ ride.destination }}</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                                📅 {{ ride.date_time.strftime('%b %d, %Y - %I:%M %p') }}
+                            </p>
+                        </div>
+                        <span class="badge badge-primary">{{ ride.status }}</span>
+                    </div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;">
+                        <span style="font-size: 0.9rem;">🚙 {{ ride.seats_available }}/{{ ride.seats_total }} Seats left</span>
+                        <a href="{{ url_for('ride.details', ride_id=ride.id) }}" style="color: var(--accent-secondary); font-weight: 500;">View Details →</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="glass-card" style="text-align: center; padding: 2rem;">
+                <p style="color: var(--text-secondary);">You haven't offered any commutes yet.</p>
+                <a href="{{ url_for('ride.offer') }}" class="btn btn-primary" style="margin-top: 1rem;">Offer a Commute</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div>
+        <h3 style="margin-bottom: 1rem; color: var(--success);">Rides I've Joined</h3>
+        {% if joined_rides %}
+            <div class="grid" style="gap: 1rem;">
+                {% for ride in joined_rides %}
+                <div class="glass-card" style="padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                {% if ride.ride_type == 'to_college' %}
+                                    <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid var(--success);">To College</span>
+                                {% else %}
+                                    <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid var(--warning);">From College</span>
+                                {% endif %}
+                                {% if ride.is_recurring %}
+                                    <span class="badge badge-primary">🔄 Daily</span>
+                                {% endif %}
+                            </div>
+                            <h4 style="font-size: 1.1rem;">{{ ride.source }} → {{ ride.destination }}</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                                📅 {{ ride.date_time.strftime('%b %d, %Y - %I:%M %p') }}
+                            </p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                👤 Driver: {{ ride.driver.name }} <span title="Verified Student" style="color: var(--accent-primary);">✓</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end;">
+                        <a href="{{ url_for('ride.details', ride_id=ride.id) }}" style="color: var(--accent-secondary); font-weight: 500;">View Details →</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="glass-card" style="text-align: center; padding: 2rem;">
+                <p style="color: var(--text-secondary);">You haven't joined any commutes.</p>
+                <a href="{{ url_for('ride.find') }}" class="btn btn-secondary" style="margin-top: 1rem;">Find a Commute</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div style="margin-top: 3rem;">
+    <h3 style="margin-bottom: 1rem;">Upcoming Commutes (Campus)</h3>
+    <div class="grid grid-cols-3">
+        {% for ride in available_rides %}
+        <div class="glass-card">
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                {% if ride.ride_type == 'to_college' %}
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid var(--success);">To College</span>
+                {% else %}
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid var(--warning);">From College</span>
+                {% endif %}
+            </div>
+            <h4>{{ ride.source }} → {{ ride.destination }}</h4>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0;">📅 {{ ride.date_time.strftime('%b %d at %I:%M %p') }}</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                <span style="font-size: 0.85rem; font-weight: 600;">💰 ₹{{ ride.cost_per_seat|int }} per student</span>
+                <span class="badge badge-secondary">{{ ride.seats_available }} seats</span>
+            </div>
+            <form action="{{ url_for('ride.join', ride_id=ride.id) }}" method="POST" style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.5rem;">Join Commute</button>
+            </form>
+        </div>
+        {% else %}
+        <p style="color: var(--text-secondary); grid-column: span 3;">No upcoming commutes available right now.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

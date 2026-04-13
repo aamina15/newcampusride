@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Offer College Ride{% endblock %}
+
+{% block content %}
+<div class="grid" style="max-width: 800px; margin: 0 auto;">
+    <div class="glass-card">
+        <h2 style="margin-bottom: 1.5rem;">Offer a College Commute</h2>
+        
+        <form method="POST" action="{{ url_for('ride.offer') }}">
+            <!-- Ride Type Selector -->
+            <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: var(--border-radius-sm); margin-bottom: 1.5rem;">
+                <label class="form-label">Commute Direction</label>
+                <div style="display: flex; gap: 1rem;">
+                    <label style="flex: 1; padding: 1rem; border: 1px solid var(--glass-border); border-radius: var(--border-radius-sm); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05);">
+                        <input type="radio" name="ride_type" value="to_college" checked onclick="document.getElementById('locLabel').innerText='Where are you leaving from?'">
+                        🚗 To Ramswaroop College
+                    </label>
+                    <label style="flex: 1; padding: 1rem; border: 1px solid var(--glass-border); border-radius: var(--border-radius-sm); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05);">
+                        <input type="radio" name="ride_type" value="from_college" onclick="document.getElementById('locLabel').innerText='Where are you heading to?'">
+                        🏠 From Ramswaroop College
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" id="locLabel">Where are you leaving from?</label>
+                <input class="form-control" type="text" name="locality" placeholder="e.g. Aliganj, Gomti Nagar" required>
+            </div>
+
+            <!-- Pickup Location Feature -->
+            <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); padding: 1rem; border-radius: var(--border-radius-sm); margin-bottom: 1.5rem;">
+                <label class="form-label">📍 Exact Pickup Spot</label>
+                <input class="form-control" type="text" name="pickup_name" id="pickup_name" placeholder="e.g. Near HDFC ATM, Gate 2" style="margin-bottom: 0.5rem;">
+                <input type="hidden" name="pickup_lat" id="pickup_lat">
+                <input type="hidden" name="pickup_lng" id="pickup_lng">
+                <button type="button" class="btn btn-secondary" onclick="getLocation()" style="width: 100%; font-size: 0.9rem;">📍 Use My Current Location</button>
+                <p id="locationStatus" style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-secondary);"></p>
+            </div>
+
+            <script>
+                const SRMCEM_COORDS = { lat: 26.8906, lng: 81.0734 };
+                const MAPS_API_KEY = "{{ maps_api_key }}";
+
+                function getLocation() {
+                    const status = document.getElementById('locationStatus');
+                    if (!navigator.geolocation) {
+                        status.textContent = "Geolocation is not supported by your browser";
+                        return;
+                    }
+                    status.textContent = "Locating...";
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            document.getElementById('pickup_lat').value = lat;
+                            document.getElementById('pickup_lng').value = lng;
+                            status.textContent = `Location captured: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                            status.style.color = "var(--success)";
+
+                            // Trigger auto-calculate
+                            if (typeof autoCalculateDistance === 'function') {
+                                autoCalculateDistance(lat, lng, SRMCEM_COORDS.lat, SRMCEM_COORDS.lng, MAPS_API_KEY);
+                            }
+                        },
+                        () => {
+                            status.textContent = "Unable to retrieve your location";
+                            status.style.color = "var(--error)";
+                        }
+                    );
+                }
+            </script>
+            
+            <div class="grid grid-cols-2">
+                <div class="form-group">
+                    <label class="form-label">Ride Date</label>
+                    <input class="form-control" type="date" name="ride_date" id="ride_date" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Departure Time</label>
+                    <input class="form-control" type="time" name="ride_time" id="ride_time" required>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: -0.5rem; margin-bottom: 1.5rem;">
+                <label class="form-label">Recurrence</label>
+                <div style="padding: 0.8rem; background: rgba(255,255,255,0.05); border-radius: var(--border-radius-sm); border: 1px solid var(--glass-border); display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" name="is_recurring" id="is_recurring">
+                    <label for="is_recurring" style="cursor: pointer; font-weight: 500; color: var(--success);">🔄 Daily Commute (Mon-Fri)</label>
+                </div>
+            </div>
+
+            <script>
+                // Pre-fill with today and 09:00 AM
+                document.addEventListener('DOMContentLoaded', () => {
+                    const today = new Date().toISOString().split('T')[0];
+                    if(!document.getElementById('ride_date').value) {
+                        document.getElementById('ride_date').value = today;
+                    }
+                    if(!document.getElementById('ride_time').value) {
+                        document.getElementById('ride_time').value = "09:00";
+                    }
+                });
+            </script>
+            
+            <div class="grid grid-cols-2">
+                <div class="form-group">
+                    <label class="form-label">Total Seats Available</label>
+                    <input class="form-control" type="number" id="seatsInput" name="seats" min="1" max="6" value="3" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Vehicle Type</label>
+                    <select class="form-control" name="vehicle_type" id="vehicleType" style="background-color: var(--bg-card);" onchange="updateMaxSeats()">
+                        <option value="Car (Sedan)">Car (Sedan)</option>
+                        <option value="Car (SUV)">Car (SUV)</option>
+                        <option value="Bike">Bike/Scooter</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Cost Calculator Widget -->
+            <div style="background: rgba(0,0,0,0.2); border-radius: var(--border-radius-sm); padding: 1.5rem; margin-top: 1rem; border: 1px dashed var(--accent-primary);">
+                <h4 style="margin-bottom: 1rem; color: var(--accent-secondary);">⛽ Petrol Cost Calculator</h4>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" style="font-size: 0.8rem;">Est. Distance (km)</label>
+                    <input type="number" id="calcDistance" class="form-control" step="0.1" placeholder="e.g. 15">
+                </div>
+                <div class="grid grid-cols-2" style="gap: 1rem; margin-top: 1rem;">
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem;">Fuel Price (Admin Locked)</label>
+                        <div id="globalFuelPrice" data-price="{{ fuel_settings.current_price }}" style="padding: 0.8rem; background: rgba(255,255,255,0.05); border-radius: var(--border-radius-sm); color: var(--success); font-weight: 500;">
+                            ₹{{ "%.2f"|format(fuel_settings.current_price) }} / litre
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button type="button" id="btnCalculate" class="btn btn-secondary" style="width: 100%; border-color: var(--accent-primary);">Calculate Split</button>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem;">
+                    <label class="form-label" style="display: flex; justify-content: space-between;">
+                        Final Cost Per Seat (₹) <span id="suggestedCostBadge" class="badge badge-primary" style="display: none;">Calculated!</span>
+                    </label>
+                    <input type="number" class="form-control" id="costPerSeatInput" name="cost_per_seat" step="0.01" min="0" required>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" name="female_only" id="female_only">
+                <label for="female_only" style="cursor: pointer; font-weight: 500;">🔒 Female-Only Ride</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; font-size: 1.1rem; padding: 1rem;">Publish Commute</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/calculator.js') }}"></script>
+{% endblock %}
